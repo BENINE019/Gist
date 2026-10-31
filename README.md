@@ -1,4 +1,4 @@
-# Mimic: teach once, adapt to new scenes
+# Gist: Show it once. It gets the gist.
 
 Film yourself doing a task once on your phone. Mimic works out what you were
 trying to do, then does it in scenes it has never seen and exports every
