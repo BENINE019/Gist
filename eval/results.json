@@ -370,10 +370,8 @@
       "merged": 0
     },
     "events": {
-      "moved_correct": 1,
-      "moved_false": [
-        "gray key#0"
-      ],
+      "moved_correct": 2,
+      "moved_false": [],
       "moved_missed": [],
       "static_correct": 3,
       "events": 1,

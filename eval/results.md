@@ -26,11 +26,11 @@ Naming recall: **98%** (41/42 objects). Coverage = frames tracked while the obje
 | c05 | 2 | 2 | - | - | 0 | 2 | - |
 | c06 | 5 | 4 | - | - | 1 | 4 | - |
 | c07 | 1 | 1 | - | - | 4 | 1 | - |
-| c08 | 1 | 1 | gray key#0 | - | 3 | 1 | ✓ |
+| c08 | 2 | 2 | - | - | 3 | 1 | ✓ |
 | c09 | 1 | 1 | - | - | 3 | 1 | - |
 | c10 | 3 | 3 | - | - | 1 | 3 | - |
 
-Moved-object recall: **96%** (22/23). Attachment column: whether the keychain was grouped with the wallet where the truth says it should be.
+Moved-object recall: **96%** (23/24). Attachment column: whether the keychain was grouped with the wallet where the truth says it should be.
 
 ## Table 3: goal inference (Muse Spark), with and without narration
 

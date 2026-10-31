@@ -71,7 +71,7 @@ goal: move(black wallet, left, table)
 scope: this
 order_matters: false
 objects: silver keychain, white remote, blue eraser, black pencil, black wallet
-moved: black wallet
+moved: black wallet, silver keychain
 narration: "I'm sliding the wallet to the left"
 notes: slid, not lifted; keychain attached
 
