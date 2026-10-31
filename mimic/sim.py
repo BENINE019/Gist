@@ -208,7 +208,9 @@ class Scene:
         # Table top at z = 0, generous size, centred between arm and objects.
         tcx, tcy = self.centroid[0], (self.centroid[1] + self.base_xy[1]) / 2
         wb.add_geom(name="table", type=mujoco.mjtGeom.mjGEOM_BOX, pos=[tcx, tcy, -0.02],
-                    size=[0.8, 0.8, 0.02], rgba=[0.82, 0.76, 0.65, 1])
+                    size=[0.8, 0.8, 0.02], rgba=[0.80, 0.62, 0.42, 1])
+        wb.add_geom(name="table_rim", type=mujoco.mjtGeom.mjGEOM_BOX, pos=[tcx, tcy, -0.045],
+                    size=[0.82, 0.82, 0.005], rgba=[0.55, 0.40, 0.26, 1])
         wb.add_geom(name="floor", type=mujoco.mjtGeom.mjGEOM_PLANE, pos=[0, 0, -0.75],
                     size=[3, 3, 0.1], rgba=[0.35, 0.37, 0.4, 1])
         # Marker outline for orientation (origin of the table frame).
@@ -338,25 +340,39 @@ class Scene:
             worst = 0.0
             tilt_from = state["tilt"]
             for i in range(1, n + 1):
-                p = start + (target - start) * (i / n)
+                u = i / n
+                u = u * u * (3 - 2 * u)              # smooth start and stop
+                p = start + (target - start) * u
                 worst = max(worst, self.ik(p))
                 if state["yaw"] is not None:
                     self.align_yaw(state["yaw"])
                 if tilt_to is not None:
-                    state["tilt"] = tilt_from + (tilt_to - tilt_from) * (i / n)
+                    state["tilt"] = tilt_from + (tilt_to - tilt_from) * u
                 for k in holding:
                     tp = self.tcp_pos()
                     if k == state["upright"]:
                         # tilt from flat (as grasped) to hanging upright below the fingertips
                         t = state["tilt"]
                         q = slerp([1, 0, 0, 0], UPRIGHT_Q(k, self), t)
-                        drop = (self.objects[k]["long_m"] / 2 - 0.01) * t
-                        self.set_object_pose(k, tp[0], tp[1], tp[2] - drop, q)
+                        self.set_object_pose(k, tp[0], tp[1], tp[2], q)   # held at its middle
                     else:
                         self.set_object(k, *(tp + hold_offsets[k]))
                 mujoco.mj_forward(self.model, self.data)
                 record()
             return worst
+
+        def fingers(to_width: float, seconds: float = 0.35) -> None:
+            start_w = float(self.data.qpos[self.finger_qadr[0]])
+            n = max(2, int(seconds * FPS))
+            for i in range(1, n + 1):
+                u = i / n
+                u = u * u * (3 - 2 * u)
+                self.set_fingers(start_w + (to_width - start_w) * u)
+                for k in holding:
+                    tp = self.tcp_pos()
+                    self.set_object(k, *(tp + hold_offsets[k]))
+                mujoco.mj_forward(self.model, self.data)
+                record()
 
         for _ in range(FPS // 2):
             record()
@@ -385,7 +401,7 @@ class Scene:
                 release_z = grasp_z
             place_t = np.array([px, py, release_z])
 
-            state["yaw"] = o["yaw"]          # close the fingers across the object's short side
+            state["yaw"] = o["yaw"] + np.pi / 2   # fingers close across the object's long axis
             state["upright"] = None
             e1 = goto(pick_t + [0, 0, APPROACH], 1.0)
             e2 = goto(pick_t, 0.5)
@@ -395,14 +411,14 @@ class Scene:
                 continue
             gap = float(np.linalg.norm(self.object_pos(key)[:2] - self.tcp_pos()[:2]))
             if gap > 0.03:
-                self.set_fingers(0.004)
-                for _ in range(FPS // 3):
+                fingers(0.004)
+                for _ in range(FPS // 4):
                     record()
-                self.set_fingers(0.04)
+                fingers(0.04)
                 log.append({"step": i, "object": key, "status": f"missed: nothing at the pick position ({gap * 100:.0f} cm away)"})
                 goto(pick_t + [0, 0, APPROACH], 0.5)
                 continue
-            self.set_fingers(max(0.004, o["short_m"] / 2))
+            fingers(max(0.004, o["short_m"] / 2))
             holding = [key] + [k for k in st.get("carried", []) if k in self.objects]
             for k in holding:
                 hold_offsets[k] = self.object_pos(k) - self.tcp_pos()
@@ -413,7 +429,8 @@ class Scene:
                 state["upright"] = key        # long thin thing into a cup: carry it standing up
                 state["tilt"] = 0.0
                 goto(pick_t + [0, 0, APPROACH + o["long_m"] / 2], 0.8, tilt_to=1.0)
-                release_z = max(release_z, o["long_m"] + 0.02)
+                c_h = self.objects[into]["h_cm"] / 100.0
+                release_z = max(release_z, c_h + o["long_m"] / 2 + 0.02)   # pencil bottom clears the cup rim
                 place_t = np.array([px, py, release_z])
             else:
                 goto(pick_t + [0, 0, APPROACH], 0.6)
@@ -429,7 +446,7 @@ class Scene:
                     self.set_object(k, p[0], p[1], z)
             holding = []
             state["upright"] = None
-            self.set_fingers(0.04)
+            fingers(0.04)
             for _ in range(FPS // 6):
                 record()
             goto(place_t + [0, 0, APPROACH], 0.6)
