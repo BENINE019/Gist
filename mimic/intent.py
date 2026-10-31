@@ -47,9 +47,10 @@ Rules:
 - Use exactly one of these goal types and fill only its arguments; leave the others as empty strings:
   put_all(category, container)  move(object, relation, anchor)  arrange(category, pattern)  stack(top, base)  swap(a, b)
 - scope is "all" when every object of that kind should be handled (even ones not present in this demo), "this" when only the specific object(s) shown matter.
-- order_matters is true only if doing the moves in another order would be wrong.
+- order_matters is true if doing the moves in another order would be wrong, OR if the narration spells out a sequence ("first the marker, then the scissors..."); in that case also fill "order" with the object keys in that sequence.
 - Narration outranks guesses: if the person says "all the pencils", scope is "all". If narration and events disagree, trust the events for WHAT happened and the narration for WHY.
 - Objects that were never touched are context, not part of the goal, unless they serve as an anchor or container.
+- Do not invent an anchor. A direction word in the narration ("to the left", "slide it right", "to the leftmost position", "forward", "back") IS the relation: use "left", "right", "leftmost", "rightmost", "front" or "back" with an EMPTY anchor. Only when there is neither a reference object nor a direction ("over here", "to this spot") use relation "to" with an empty anchor. If the object also ended up next to something, offer the anchored reading as a second candidate with an honest confidence.
 - Use the object names as given in the data (e.g. "black pencil#0"); for categories use the plain noun ("pencil").
 - Give 1 to 3 candidates sorted by confidence (confidences sum to at most 1). If the top two differ by less than 0.2, write one short clarifying question a robot should ask; otherwise leave it empty.
 - Write a one-sentence task description in plain language that a person would say to a robot."""
@@ -194,6 +195,14 @@ def infer(video: Path, out_dir: Path, model: str, use_narration: bool) -> dict:
     data["candidates"] = cands
     for c in cands:
         c["goal"] = goal_string(c)
+        if c["type"] == "move" and not c.get("anchor"):
+            # position-only or directional move: remember where the demonstration put it
+            key = c.get("object", "")
+            for e in events["events"]:
+                if e["object"] == key or e["object"].split("#")[0] == key.split("#")[0]:
+                    c["place_xy"] = e["place_xy"]
+                    c["pick_xy"] = e["pick_xy"]
+                    break
     # Enforce the clarification rule ourselves, whatever the model decided.
     if len(cands) >= 2 and cands[0]["confidence"] - cands[1]["confidence"] < CLARIFY_MARGIN:
         data["needs_clarification"] = True

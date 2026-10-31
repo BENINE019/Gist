@@ -24,7 +24,7 @@ notes:
 ## c03
 goal: stack(small eraser, big eraser)
 scope: this
-order_matters: true
+order_matters: false
 objects: small eraser, big eraser
 moved: small eraser
 narration: "Now I'm gonna stack the small eraser on the big eraser."
@@ -49,16 +49,16 @@ narration: "I'm swapping the position of the scissor with the position of the ey
 notes:
 
 ## c06
-goal: put_all(purple marker, white scissor, brown pencil lead case, blue eraser, black pencil)
-scope: this
-order_matters: false
+goal: put_all(object, cup)
+scope: all
+order_matters: true
 objects: purple marker, white scissor, brown pencil lead case, blue eraser, black pencil, white cup
 moved: purple marker, white scissor, brown pencil lead case, blue eraser, black pencil
 narration: "In this task here we are putting 5 object into the cup starting of with the marker, then the scissor, then the pencil lead case, and the eraser, and the pencil"
-notes:
+notes: narration gives the order: marker, scissors, lead case, eraser, pencil
 
 ## c07
-goal: move(blue eraser)
+goal: move(blue eraser, leftmost, table)
 scope: this
 order_matters: false
 objects: purple marker, white remote, white scissor, blue eraser, black pencil
@@ -67,27 +67,27 @@ narration: "I will be moving the eraser to the left most position"
 notes:
 
 ## c08
-goal: move(black wallet)
+goal: move(black wallet, silver keychain, left, table)
 scope: this
 order_matters: false
 objects: silver keychain, white remote, blue eraser, black pencil, black wallet
 moved: black wallet
 narration: "I'm sliding the wallet to the left"
-notes: keychain attached to wallet, should be grouped
+notes: slid, not lifted; keychain attached
 
 ## c09
-goal: move(black pencil)
+goal: move(black pencil, to, position)
 scope: this
 order_matters: false
 objects: silver keychain, white remote, blue eraser, black pencil, black wallet
 moved: black pencil
 narration: "I'm moving the pencil over here"
-notes: keychain attached to wallet, should be grouped
+notes:
 
 
 ## c10
-goal: put all(pencil, cup)
-scope: this
+goal: put_all(pencil, cup)
+scope: all
 order_matters: false
 objects: black pencil, cream pencil, red pencil, white cup
 moved: black pencil, cream pencil, red pencil

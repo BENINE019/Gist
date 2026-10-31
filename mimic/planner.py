@@ -87,7 +87,7 @@ def relation_target(obj: dict, relation: str, anchor: dict | None, objects: list
             return [oxy[0], oxy[1] - step * 1.5]
         if "behind" in r or "back" in r or "up" in r:
             return [oxy[0], oxy[1] + step * 1.5]
-        return oxy.tolist()  # "to", "over here": no better information
+        return None  # "to", "over here": the demonstrated place position is used instead
     axy = np.array(anchor["xy"], float)
     gap = half_extent(anchor) + half_extent(obj) + 3.0
     if "left" in r:
@@ -164,6 +164,8 @@ def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
         if anchor is not None and anchor["key"] == obj["key"]:
             anchor = None
         target = relation_target(obj, goal.get("relation", ""), anchor, objects)
+        if target is None:
+            target = goal.get("place_xy") or obj["xy"]
         step(obj, target)
         return steps, f"{obj['key']} {goal.get('relation', 'to')} {anchor['key'] if anchor else target}"
 
@@ -250,6 +252,9 @@ def check(goal: dict, objects: list[dict], final_xy: dict[str, list[float]]) -> 
                 return d[1] < -5, "moved toward front"
             if "behind" in r or "back" in r or "up" in r:
                 return d[1] > 5, "moved back"
+            if goal.get("place_xy"):
+                err = np.linalg.norm(p - np.array(goal["place_xy"]))
+                return err < NEAR_CM, f"{err:.1f} cm from the demonstrated spot"
             return np.linalg.norm(d) > 5, "moved" if np.linalg.norm(d) > 5 else "did not move"
         a = pos[anchor["key"]]
         gap = half_extent(anchor) + half_extent(obj)

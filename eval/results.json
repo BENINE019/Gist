@@ -1,0 +1,518 @@
+{
+  "c01": {
+    "perception": {
+      "gt_objects": 6,
+      "named": 6,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 8,
+      "objects_after_dedupe": 6,
+      "coverage": 0.9970508166969148,
+      "merged": 2
+    },
+    "events": {
+      "moved_correct": 3,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 3,
+      "events": 3,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "put_all(pencil, white container#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.97,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "put_all(pencil, white container#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.85,
+        "asked": false,
+        "question": "",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c02": {
+    "perception": {
+      "gt_objects": 4,
+      "named": 4,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 6,
+      "objects_after_dedupe": 4,
+      "coverage": 0.993623454921265,
+      "merged": 1
+    },
+    "events": {
+      "moved_correct": 4,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 0,
+      "events": 4,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "arrange(object, line)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.92,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "arrange(object, row)",
+        "type_ok": true,
+        "scope_ok": false,
+        "order_ok": true,
+        "confidence": 0.6,
+        "asked": false,
+        "question": "",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c03": {
+    "perception": {
+      "gt_objects": 2,
+      "named": 2,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 3,
+      "objects_after_dedupe": 2,
+      "coverage": 1.0,
+      "merged": 1
+    },
+    "events": {
+      "moved_correct": 1,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 0,
+      "events": 1,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "stack(small blue eraser#1, small blue eraser#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.97,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "stack(small blue eraser#1, small blue eraser#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.85,
+        "asked": false,
+        "question": "",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c04": {
+    "perception": {
+      "gt_objects": 3,
+      "named": 3,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 3,
+      "objects_after_dedupe": 3,
+      "coverage": 1.0,
+      "merged": 0
+    },
+    "events": {
+      "moved_correct": 2,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 1,
+      "events": 1,
+      "attach_expected": true,
+      "attach_found": true
+    },
+    "intent": {
+      "with": {
+        "goal": "move(black wallet#0, next to, brown pencil#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.95,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "move(black wallet#0, to)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.45,
+        "asked": true,
+        "question": "Did you want the wallet next to the brown pencil or just in that spot?",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c05": {
+    "perception": {
+      "gt_objects": 2,
+      "named": 2,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 2,
+      "objects_after_dedupe": 2,
+      "coverage": 0.9933333333333334,
+      "merged": 0
+    },
+    "events": {
+      "moved_correct": 2,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 0,
+      "events": 2,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "swap(white scissors#0, black glasses#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.98,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "swap(white scissors#0, black glasses#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.8,
+        "asked": false,
+        "question": "",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": false,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c06": {
+    "perception": {
+      "gt_objects": 6,
+      "named": 6,
+      "missed": [],
+      "spurious": [
+        "white paper#1"
+      ],
+      "raw_tracks": 7,
+      "objects_after_dedupe": 7,
+      "coverage": 0.985565450209984,
+      "merged": 0
+    },
+    "events": {
+      "moved_correct": 4,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 1,
+      "events": 4,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "put_all(object, white bowl#0)",
+        "type_ok": true,
+        "scope_ok": false,
+        "order_ok": true,
+        "confidence": 0.85,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "put_all(tool, white bowl#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": false,
+        "confidence": 0.45,
+        "asked": true,
+        "question": "Should I put all tools in the bowl, or just these ones?",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c07": {
+    "perception": {
+      "gt_objects": 5,
+      "named": 5,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 5,
+      "objects_after_dedupe": 5,
+      "coverage": 1.0,
+      "merged": 0
+    },
+    "events": {
+      "moved_correct": 1,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 4,
+      "events": 1,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "move(blue eraser#0, leftmost)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.85,
+        "asked": false,
+        "question": "",
+        "n_candidates": 2
+      },
+      "without": {
+        "goal": "move(blue eraser#0, left, black pencil#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.45,
+        "asked": true,
+        "question": "Do you want the eraser just left of the pencil or at the far left end?",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c08": {
+    "perception": {
+      "gt_objects": 5,
+      "named": 5,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 5,
+      "objects_after_dedupe": 5,
+      "coverage": 0.9969543147208121,
+      "merged": 0
+    },
+    "events": {
+      "moved_correct": 1,
+      "moved_false": [
+        "gray key#0"
+      ],
+      "moved_missed": [],
+      "static_correct": 3,
+      "events": 1,
+      "attach_expected": true,
+      "attach_found": true
+    },
+    "intent": {
+      "with": {
+        "goal": "move(black wallet#0, left)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.95,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "move(black wallet#0, to)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.5,
+        "asked": true,
+        "question": "Do you want the wallet in this exact spot, or just moved to the left?",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c09": {
+    "perception": {
+      "gt_objects": 5,
+      "named": 4,
+      "missed": [
+        "silver keychain"
+      ],
+      "spurious": [],
+      "raw_tracks": 4,
+      "objects_after_dedupe": 4,
+      "coverage": 1.0,
+      "merged": 0
+    },
+    "events": {
+      "moved_correct": 1,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 3,
+      "events": 1,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "move(black pencil#0, to)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.62,
+        "asked": false,
+        "question": "",
+        "n_candidates": 2
+      },
+      "without": {
+        "goal": "move(black pencil#0, next to, black wallet#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.62,
+        "asked": false,
+        "question": "",
+        "n_candidates": 2
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.1,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  },
+  "c10": {
+    "perception": {
+      "gt_objects": 4,
+      "named": 4,
+      "missed": [],
+      "spurious": [],
+      "raw_tracks": 5,
+      "objects_after_dedupe": 4,
+      "coverage": 0.9793457960238083,
+      "merged": 1
+    },
+    "events": {
+      "moved_correct": 3,
+      "moved_false": [],
+      "moved_missed": [],
+      "static_correct": 1,
+      "events": 3,
+      "attach_expected": false,
+      "attach_found": false
+    },
+    "intent": {
+      "with": {
+        "goal": "put_all(pencil, white cup#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.97,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      },
+      "without": {
+        "goal": "put_all(pencil, white cup#0)",
+        "type_ok": true,
+        "scope_ok": true,
+        "order_ok": true,
+        "confidence": 0.95,
+        "asked": false,
+        "question": "",
+        "n_candidates": 1
+      }
+    },
+    "generalize": {
+      "goal_orig": true,
+      "copy_orig": true,
+      "goal_shuf": 1.0,
+      "copy_shuf": 0.0,
+      "episodes": 11,
+      "n_shuffled": 10
+    }
+  }
+}
