@@ -6,3 +6,6 @@ requests
 mujoco>=3.2
 pandas
 pyarrow
+fastapi
+uvicorn
+python-multipart

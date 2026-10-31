@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mimic: teach a robot once, from a phone video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F5F8; --paper-2:#E7EBF0; --ink:#1B222C; --ink-2:#4A5563; --rule:#C9D1DB;
+    --pencil:#E9B82C; --pencil-ink:#5A4300; --copy:#9AA3AE; --ok:#2E8B57; --bad:#B23A3A;
+    --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--sans)}
+  a{color:inherit}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 24px 80px}
+  header{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:baseline;justify-content:space-between;margin-bottom:28px}
+  header h1{font-size:30px;font-weight:600;margin:0;letter-spacing:-.01em}
+  header p{margin:0;color:var(--ink-2);max-width:56ch}
+  .picker{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+  .picker button{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--rule);background:#fff;border-radius:999px;cursor:pointer;color:var(--ink)}
+  .picker button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .picker button[disabled]{opacity:.5;cursor:progress}
+  .picker button:focus-visible,button:focus-visible{outline:3px solid var(--pencil);outline-offset:2px}
+
+  .hero{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .hero figure{margin:0}
+  .hero video{width:100%;aspect-ratio:16/9;background:#0E1218;border-radius:6px;display:block}
+  .hero figcaption{margin-top:8px;font-size:14px;color:var(--ink-2)}
+  .task{grid-column:1/-1;font-size:22px;font-weight:500;margin:4px 0 0}
+  .task .goal{font:500 15px var(--mono);background:var(--paper-2);padding:2px 8px;border-radius:4px;margin-left:10px;color:var(--pencil-ink)}
+
+  .act{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:16px 0 4px;border-top:1px solid var(--rule);margin-top:8px}
+  .act .big{font:600 17px var(--sans);background:var(--pencil);color:var(--pencil-ink);border:0;border-radius:6px;padding:12px 20px;cursor:pointer}
+  .act .big[disabled]{opacity:.55;cursor:progress}
+  .act label{font-size:14px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+  .act .status{font-size:14px;color:var(--ink-2);margin-left:auto}
+
+  .result{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+  .result figure{margin:0}
+  .result video{width:100%;aspect-ratio:4/3;background:#0E1218;border-radius:6px;display:block}
+  .result figcaption{margin-top:8px;font-size:15px}
+  .verdict{display:inline-block;font-weight:600;padding:1px 8px;border-radius:4px;margin-right:8px}
+  .verdict.ok{background:#DDF1E4;color:var(--ok)} .verdict.bad{background:#F6DDDD;color:var(--bad)}
+  .result .steps{margin:6px 0 0;padding-left:18px;color:var(--ink-2);font-size:14px}
+
+  section{margin-top:44px;border-top:1px solid var(--rule);padding-top:20px}
+  section h2{font-size:18px;font-weight:600;margin:0 0 4px}
+  section h2 small{font-weight:400;color:var(--ink-2);margin-left:10px}
+  section .lead{color:var(--ink-2);margin:0 0 14px;max-width:70ch}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .two img{width:100%;border:1px solid var(--rule);border-radius:6px;background:#fff}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  th,td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--paper-2);vertical-align:top}
+  th{font-weight:500;color:var(--ink-2)}
+  td code,.mono{font:14px var(--mono)}
+  .role{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+  .role.moved{background:var(--pencil)} .role.attached{background:#B58900} .role.static{background:var(--copy)} .role.container{background:var(--ok)}
+  .cands li{margin:4px 0}
+  .conf{display:inline-block;height:8px;background:var(--pencil);border-radius:4px;vertical-align:middle;margin:0 8px 0 0}
+  .ask{background:#FFF6D6;border-left:4px solid var(--pencil);padding:10px 14px;margin-top:12px}
+  .quiet{color:var(--ink-2);font-size:14px}
+  .narr{font-size:17px;line-height:1.6;max-width:70ch}
+  .narr time{color:var(--ink-2);font-size:13px;margin-right:6px}
+
+  .upload{border:1px dashed var(--rule);border-radius:6px;padding:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .upload input{font:inherit}
+  .bar{height:6px;background:var(--paper-2);border-radius:3px;overflow:hidden;flex:1 1 200px}
+  .bar i{display:block;height:100%;background:var(--pencil);width:0;transition:width .4s}
+
+  @media (max-width:760px){.hero,.result,.two{grid-template-columns:1fr}.task{font-size:19px}}
+  @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Mimic</h1>
+    <p>Film a task once on your phone. Mimic works out what you meant, then does it in scenes it has never seen.</p>
+  </header>
+
+  <div class="picker" id="picker" role="tablist" aria-label="Demonstrations"></div>
+
+  <div class="hero" id="hero">
+    <figure><video id="demoVideo" controls muted playsinline></video><figcaption>Your demonstration, as filmed</figcaption></figure>
+    <figure><video id="replayVideo" controls muted playsinline></video><figcaption>The robot, in the same scene</figcaption></figure>
+    <p class="task" id="task"></p>
+    <div class="act">
+      <button class="big" id="shuffleBtn">Shuffle the scene and run both robots</button>
+      <label><input type="checkbox" id="optExtra"> add an extra object of the same kind</label>
+      <label><input type="checkbox" id="optDistractor"> add a distractor</label>
+      <span class="status" id="shuffleStatus"></span>
+    </div>
+    <div class="result" id="result" hidden>
+      <figure><video id="goalVideo" controls muted playsinline autoplay></video><figcaption id="goalCap"></figcaption><ol class="steps" id="goalSteps"></ol></figure>
+      <figure><video id="copyVideo" controls muted playsinline autoplay></video><figcaption id="copyCap"></figcaption><ol class="steps" id="copySteps"></ol></figure>
+    </div>
+  </div>
+
+  <section id="secGoal">
+    <h2>What it thinks you meant <small>Muse Spark, from the events and your narration</small></h2>
+    <p class="narr" id="narration"></p>
+    <ul class="cands" id="cands"></ul>
+    <div class="ask" id="ask" hidden></div>
+    <p class="quiet" id="ablation"></p>
+  </section>
+
+  <section id="secEvents">
+    <h2>What it saw <small>SAM 3.1 tracks, mapped onto the table with one printed marker</small></h2>
+    <div class="two">
+      <figure style="margin:0"><img id="topdown" alt="Bird's-eye paths of every object"><figcaption class="quiet">Bird's-eye view. Circle = start, square = end, grey = your hand.</figcaption></figure>
+      <figure style="margin:0"><img id="timeline" alt="Timeline of hand contact, grasps and releases"><figcaption class="quiet">When each object was touched, grasped and released.</figcaption></figure>
+    </div>
+    <table id="eventsTable" style="margin-top:14px"><thead><tr><th>Object</th><th>Role</th><th>What happened</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section id="secScenes">
+    <h2>Ten shuffled scenes <small>goal plan versus copying the demonstration</small></h2>
+    <p class="lead" id="scenesLead"></p>
+    <table id="scenesTable"><thead><tr><th>Scene</th><th>Layout</th><th>Goal plan</th><th>Copy baseline</th><th>Videos</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section id="secUpload">
+    <h2>Try your own clip</h2>
+    <p class="lead">10 to 30 seconds, phone propped above a table, the printed ArUco marker (9.5 cm, id 0) flat in a corner, every object visible in the first second. Say what you are doing while you do it. Processing takes two to four minutes.</p>
+    <div class="upload">
+      <input type="file" id="file" accept="video/*">
+      <button class="big" id="uploadBtn" style="font-size:15px;padding:9px 16px">Run Mimic on this clip</button>
+      <div class="bar" id="bar"><i></i></div>
+      <span class="quiet" id="uploadStatus"></span>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let current = null;
+let busy = false;        // a shuffle is rendering
+let busyTimer = null;
+
+async function getJSON(url, opts) {
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+const pct = (x) => x == null ? "" : Math.round(x * 100) + "%";
+const esc = (s) => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+async function loadList(select) {
+  const clips = await getJSON("/api/clips");
+  const p = $("#picker"); p.innerHTML = "";
+  clips.forEach(c => {
+    const b = document.createElement("button");
+    b.textContent = c.task || c.name;
+    b.title = c.name;
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-pressed", String(c.name === (select || (clips[0] && clips[0].name))));
+    b.onclick = () => loadClip(c.name);
+    p.appendChild(b);
+  });
+  if (clips.length) loadClip(select || clips[0].name);
+}
+
+function setBusy(on, label) {
+  busy = on;
+  document.querySelectorAll("#picker button").forEach(b => b.disabled = on);
+  $("#shuffleBtn").disabled = on;
+  const st = $("#shuffleStatus");
+  clearInterval(busyTimer);
+  if (on) {
+    const t0 = Date.now();
+    const tick = () => { st.textContent = `${label} ${Math.round((Date.now() - t0) / 1000)} s so far; usually 30 to 60 s.`; };
+    tick(); busyTimer = setInterval(tick, 1000);
+  }
+}
+
+async function loadClip(name) {
+  if (busy) { $("#shuffleStatus").textContent += " Finish this shuffle before switching clips."; return; }
+  current = name;
+  document.querySelectorAll("#picker button").forEach(b => b.setAttribute("aria-pressed", String(b.title === name)));
+  const d = await getJSON("/api/clip/" + name);
+  $("#result").hidden = true; $("#shuffleStatus").textContent = "";
+  $("#demoVideo").src = d.video || "";
+  const scene0 = d.scenes.find(s => s.scene === 0);
+  $("#replayVideo").src = (scene0 && scene0.goal_video) || d.replay || "";
+
+  const it = d.intent || {}, top = (it.candidates || [])[0];
+  $("#task").innerHTML = esc(it.task_sentence || "") + (top ? `<span class="goal">${esc(top.goal)}</span>` : "");
+
+  const n = d.narration;
+  $("#narration").innerHTML = n && n.turns && n.turns.length
+    ? n.turns.map(t => `<time>${t.start_s.toFixed(1)}s</time>“${esc(t.text)}”`).join("<br>")
+    : "<span class='quiet'>No narration for this clip.</span>";
+  $("#cands").innerHTML = (it.candidates || []).map(c =>
+    `<li><span class="conf" style="width:${Math.max(4, Math.round(c.confidence * 160))}px"></span><code>${esc(c.goal)}</code>
+     <span class="quiet"> ${Math.round(c.confidence * 100)}%, scope ${esc(c.scope)}${c.order_matters ? ", in order" : ""}. ${esc(c.reason)}</span></li>`).join("");
+  const ask = $("#ask");
+  if (it.needs_clarification) { ask.hidden = false; ask.textContent = "Before acting, the robot would ask: " + it.clarifying_question; }
+  else ask.hidden = true;
+  const wo = d.intent_no_narration;
+  $("#ablation").textContent = wo && wo.candidates && wo.candidates.length
+    ? `Without the narration it would have read this as ${wo.candidates[0].goal} at ${Math.round(wo.candidates[0].confidence * 100)}%` +
+      (wo.needs_clarification ? ` and asked: “${wo.clarifying_question}”` : "") + "."
+    : "";
+
+  $("#topdown").src = d.topdown || ""; $("#timeline").src = d.timeline || "";
+  const ev = d.events || {objects: [], events: []};
+  const byObj = {};
+  ev.events.forEach(e => { (byObj[e.object] = byObj[e.object] || []).push(e); });
+  $("#eventsTable tbody").innerHTML = ev.objects.map(o => {
+    const what = (byObj[o.key] || []).map(e => `${e.grasp_s}s: from (${e.pick_xy}) ${e.in ? "into " + esc(e.in) : e.on ? "onto " + esc(e.on) : "to (" + e.place_xy + ")"}${e.carried.length ? " with " + esc(e.carried.join(", ")) : ""}`).join("<br>")
+      || (o.role === "attached" ? "rides with " + esc(o.attached_to) : o.role === "container" ? "stays put; things go in it" : "never touched");
+    return `<tr><td><code>${esc(o.key)}</code></td><td><span class="role ${o.role}"></span>${o.role}</td><td>${what}</td></tr>`;
+  }).join("");
+
+  const s = d.summary;
+  if (s) {
+    const shuf = d.scenes.filter(x => x.scene > 0);
+    $("#scenesLead").textContent = `In ${shuf.length} shuffled layouts the goal plan succeeded ${pct(s.goal_success_shuffled)} of the time and copying the demonstration ${pct(s.copy_success_shuffled)}. ${s.episodes_exported} episodes were exported from this one video.`;
+    $("#scenesTable tbody").innerHTML = d.scenes.map(x => `<tr><td>${x.scene}</td><td>${esc(x.variant)}</td>
+      <td><span class="verdict ${x.goal_ok ? "ok" : "bad"}">${x.goal_ok ? "done" : "not done"}</span><span class="quiet">${esc(x.goal_why)}</span></td>
+      <td><span class="verdict ${x.copy_ok ? "ok" : "bad"}">${x.copy_ok ? "done" : "not done"}</span><span class="quiet">${esc(x.copy_why)}${x.copy_misses ? `, ${x.copy_misses} missed grasp${x.copy_misses > 1 ? "s" : ""}` : ""}</span></td>
+      <td>${x.goal_video ? `<a href="${x.goal_video}" target="_blank">goal</a>` : ""} ${x.copy_video ? `<a href="${x.copy_video}" target="_blank">copy</a>` : ""}</td></tr>`).join("");
+  } else { $("#scenesLead").textContent = "No shuffled scenes yet for this clip."; $("#scenesTable tbody").innerHTML = ""; }
+}
+
+$("#shuffleBtn").onclick = async () => {
+  if (!current) return;
+  const st = $("#shuffleStatus");
+  const startedFor = current;
+  setBusy(true, "Shuffling the objects and rendering both robots:");
+  try {
+    const q = `?extra=${$("#optExtra").checked}&distractor=${$("#optDistractor").checked}`;
+    const r = await getJSON("/api/shuffle/" + startedFor + q, {method: "POST"});
+    if (startedFor !== current) return;   // user moved on; do not show a result for another clip
+    $("#result").hidden = false;
+    $("#goalVideo").src = r.goal_video; $("#copyVideo").src = r.copy_video;
+    $("#goalCap").innerHTML = `<span class="verdict ${r.goal_ok ? "ok" : "bad"}">${r.goal_ok ? "done" : "not done"}</span>Plans from the goal: ${esc(r.plan_note)}. ${esc(r.goal_why)}.`;
+    $("#copyCap").innerHTML = `<span class="verdict ${r.copy_ok ? "ok" : "bad"}">${r.copy_ok ? "done" : "not done"}</span>Copies the demonstrated motions. ${esc(r.copy_why)}.`;
+    $("#goalSteps").innerHTML = r.goal_steps.map(s => `<li>${esc(s.object)}: ${esc(s.status)}</li>`).join("");
+    $("#copySteps").innerHTML = r.copy_steps.map(s => `<li>${esc(s.object)}: ${esc(s.status)}</li>`).join("");
+    setBusy(false);
+    st.textContent = "New layout rendered. Press Shuffle again for another one.";
+    $("#result").scrollIntoView({behavior: "smooth", block: "nearest"});
+  } catch (e) { setBusy(false); st.textContent = "That did not work: " + e.message; }
+};
+
+$("#uploadBtn").onclick = async () => {
+  const f = $("#file").files[0], st = $("#uploadStatus"), bar = $("#bar i");
+  if (!f) { st.textContent = "Choose a video file first."; return; }
+  const fd = new FormData(); fd.append("file", f);
+  st.textContent = "Uploading"; bar.style.width = "2%";
+  try {
+    const job = await getJSON("/api/upload", {method: "POST", body: fd});
+    const poll = async () => {
+      const j = await getJSON("/api/job/" + job.id);
+      st.textContent = j.stage + (j.error ? ": " + j.error.split("\n").slice(-3).join(" ") : "");
+      bar.style.width = Math.max(2, Math.round(j.progress * 100)) + "%";
+      if (j.status === "running") setTimeout(poll, 2500);
+      else if (j.status === "done") { st.textContent = "Done. Opening your clip."; await loadList(j.clip); window.scrollTo({top: 0, behavior: "smooth"}); }
+    };
+    poll();
+  } catch (e) { st.textContent = "Upload failed: " + e.message; }
+};
+
+loadList();
+</script>
+</body>
+</html>

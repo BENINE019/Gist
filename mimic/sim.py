@@ -445,12 +445,23 @@ class Scene:
             out_dir.mkdir(parents=True, exist_ok=True)
             if frames:
                 import cv2
+                import shutil
+                import subprocess
                 h, w = frames[0].shape[:2]
-                vw = cv2.VideoWriter(str(out_dir / "episode.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), FPS, (w, h))
+                raw = out_dir / "episode_raw.mp4"
+                vw = cv2.VideoWriter(str(raw), cv2.VideoWriter_fourcc(*"mp4v"), FPS, (w, h))
                 for f in frames:
                     vw.write(cv2.cvtColor(f, cv2.COLOR_RGB2BGR))
                 vw.release()
-                result["video"] = str(out_dir / "episode.mp4")
+                final_mp4 = out_dir / "episode.mp4"
+                if shutil.which("ffmpeg"):
+                    # browsers will not play mp4v; re-encode to H.264
+                    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(raw), "-c:v", "libx264",
+                                    "-pix_fmt", "yuv420p", "-crf", "23", "-movflags", "+faststart", str(final_mp4)], check=True)
+                    raw.unlink()
+                else:
+                    raw.rename(final_mp4)
+                result["video"] = str(final_mp4)
                 result["frames"] = len(frames)
             (out_dir / "result.json").write_text(json.dumps(result, indent=2) + "\n")
         return result
