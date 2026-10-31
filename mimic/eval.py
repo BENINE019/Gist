@@ -195,9 +195,9 @@ def main() -> None:
 
     # Table 3
     L += ["## Table 3: goal inference (Muse Spark), with and without narration", "",
-          "| Clip | Truth | With narration | Type | Scope | Order | Asked? | Without narration | Type | Scope |",
-          "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
-    w_type = w_scope = wo_type = wo_scope = n_w = n_wo = asked = 0
+          "| Clip | Truth | With narration | Type | Scope | Order | Asked? | Without narration | Type | Scope | Asked? |",
+          "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+    w_type = w_scope = wo_type = wo_scope = n_w = n_wo = asked = asked_wo = 0
     for c in clips:
         r = results[c]["intent"]
         g = goals[c]
@@ -206,13 +206,14 @@ def main() -> None:
         if w:
             n_w += 1; w_type += w["type_ok"]; w_scope += w["scope_ok"]; asked += w["asked"]
         if wo:
-            n_wo += 1; wo_type += wo["type_ok"]; wo_scope += wo["scope_ok"]
+            n_wo += 1; wo_type += wo["type_ok"]; wo_scope += wo["scope_ok"]; asked_wo += wo["asked"]
         L.append(f"| {c} | `{g.get('goal', '')}` | `{w['goal'] if w else '-'}` | {tick(w['type_ok']) if w else '-'} | "
                  f"{tick(w['scope_ok']) if w else '-'} | {tick(w['order_ok']) if w else '-'} | {'yes' if w and w['asked'] else 'no'} | "
-                 f"`{wo['goal'] if wo else '-'}` | {tick(wo['type_ok']) if wo else '-'} | {tick(wo['scope_ok']) if wo else '-'} |")
-    L += ["", f"With narration: type **{pct(w_type, n_w)}**, scope **{pct(w_scope, n_w)}**, clarifying question asked on {asked} clip(s). "
-          f"Without narration: type **{pct(wo_type, n_wo)}**, scope **{pct(wo_scope, n_wo)}**. "
-          "The gap between the two columns is what narration buys.", ""]
+                 f"`{wo['goal'] if wo else '-'}` | {tick(wo['type_ok']) if wo else '-'} | {tick(wo['scope_ok']) if wo else '-'} | "
+                 f"{'yes' if wo and wo['asked'] else 'no'} |")
+    L += ["", f"With narration: type **{pct(w_type, n_w)}**, scope **{pct(w_scope, n_w)}**, clarifying question needed on **{asked}/{n_w}** clips. "
+          f"Without narration: type **{pct(wo_type, n_wo)}**, scope **{pct(wo_scope, n_wo)}**, clarifying question needed on **{asked_wo}/{n_wo}** clips. "
+          "Type and scope are scored on the top candidate. Narration mostly buys certainty: without it the model offers two readings and has to ask.", ""]
 
     # Table 4
     L += ["## Table 4: teach once, adapt to new scenes (simulation)", "",

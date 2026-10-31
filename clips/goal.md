@@ -67,7 +67,7 @@ narration: "I will be moving the eraser to the left most position"
 notes:
 
 ## c08
-goal: move(black wallet, silver keychain, left, table)
+goal: move(black wallet, left, table)
 scope: this
 order_matters: false
 objects: silver keychain, white remote, blue eraser, black pencil, black wallet

@@ -34,20 +34,20 @@ Moved-object recall: **96%** (22/23). Attachment column: whether the keychain wa
 
 ## Table 3: goal inference (Muse Spark), with and without narration
 
-| Clip | Truth | With narration | Type | Scope | Order | Asked? | Without narration | Type | Scope |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| c01 | `put_all(pencil, cup)` | `put_all(pencil, white container#0)` | ✓ | ✓ | ✓ | no | `put_all(pencil, white container#0)` | ✓ | ✓ |
-| c02 | `arrange(objects, row)` | `arrange(object, line)` | ✓ | ✓ | ✓ | no | `arrange(object, row)` | ✓ | ✗ |
-| c03 | `stack(small eraser, big eraser)` | `stack(small blue eraser#1, small blue eraser#0)` | ✓ | ✓ | ✓ | no | `stack(small blue eraser#1, small blue eraser#0)` | ✓ | ✓ |
-| c04 | `move(black wallet, next_to, pencil)` | `move(black wallet#0, next to, brown pencil#0)` | ✓ | ✓ | ✓ | no | `move(black wallet#0, to)` | ✓ | ✓ |
-| c05 | `swap(scissor, eye glasses)` | `swap(white scissors#0, black glasses#0)` | ✓ | ✓ | ✓ | no | `swap(white scissors#0, black glasses#0)` | ✓ | ✓ |
-| c06 | `put_all(object, cup)` | `put_all(object, white bowl#0)` | ✓ | ✗ | ✓ | no | `put_all(tool, white bowl#0)` | ✓ | ✓ |
-| c07 | `move(blue eraser, leftmost, table)` | `move(blue eraser#0, leftmost)` | ✓ | ✓ | ✓ | no | `move(blue eraser#0, left, black pencil#0)` | ✓ | ✓ |
-| c08 | `move(black wallet, silver keychain, left, table)` | `move(black wallet#0, left)` | ✓ | ✓ | ✓ | no | `move(black wallet#0, to)` | ✓ | ✓ |
-| c09 | `move(black pencil, to, position)` | `move(black pencil#0, to)` | ✓ | ✓ | ✓ | no | `move(black pencil#0, next to, black wallet#0)` | ✓ | ✓ |
-| c10 | `put_all(pencil, cup)` | `put_all(pencil, white cup#0)` | ✓ | ✓ | ✓ | no | `put_all(pencil, white cup#0)` | ✓ | ✓ |
+| Clip | Truth | With narration | Type | Scope | Order | Asked? | Without narration | Type | Scope | Asked? |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| c01 | `put_all(pencil, cup)` | `put_all(pencil, white container#0)` | ✓ | ✓ | ✓ | no | `put_all(pencil, white container#0)` | ✓ | ✓ | no |
+| c02 | `arrange(objects, row)` | `arrange(object, line)` | ✓ | ✓ | ✓ | no | `arrange(object, row)` | ✓ | ✗ | no |
+| c03 | `stack(small eraser, big eraser)` | `stack(small blue eraser#1, small blue eraser#0)` | ✓ | ✓ | ✓ | no | `stack(small blue eraser#1, small blue eraser#0)` | ✓ | ✓ | no |
+| c04 | `move(black wallet, next_to, pencil)` | `move(black wallet#0, next to, brown pencil#0)` | ✓ | ✓ | ✓ | no | `move(black wallet#0, to)` | ✓ | ✓ | yes |
+| c05 | `swap(scissor, eye glasses)` | `swap(white scissors#0, black glasses#0)` | ✓ | ✓ | ✓ | no | `swap(white scissors#0, black glasses#0)` | ✓ | ✓ | no |
+| c06 | `put_all(object, cup)` | `put_all(object, white bowl#0)` | ✓ | ✗ | ✓ | no | `put_all(tool, white bowl#0)` | ✓ | ✓ | yes |
+| c07 | `move(blue eraser, leftmost, table)` | `move(blue eraser#0, leftmost)` | ✓ | ✓ | ✓ | no | `move(blue eraser#0, left, black pencil#0)` | ✓ | ✓ | yes |
+| c08 | `move(black wallet, left, table)` | `move(black wallet#0, left)` | ✓ | ✓ | ✓ | no | `move(black wallet#0, to)` | ✓ | ✓ | yes |
+| c09 | `move(black pencil, to, position)` | `move(black pencil#0, to)` | ✓ | ✓ | ✓ | no | `move(black pencil#0, next to, black wallet#0)` | ✓ | ✓ | no |
+| c10 | `put_all(pencil, cup)` | `put_all(pencil, white cup#0)` | ✓ | ✓ | ✓ | no | `put_all(pencil, white cup#0)` | ✓ | ✓ | no |
 
-With narration: type **100%**, scope **90%**, clarifying question asked on 0 clip(s). Without narration: type **100%**, scope **90%**. The gap between the two columns is what narration buys.
+With narration: type **100%**, scope **90%**, clarifying question needed on **0/10** clips. Without narration: type **100%**, scope **90%**, clarifying question needed on **4/10** clips. Type and scope are scored on the top candidate. Narration mostly buys certainty: without it the model offers two readings and has to ask.
 
 ## Table 4: teach once, adapt to new scenes (simulation)
 
