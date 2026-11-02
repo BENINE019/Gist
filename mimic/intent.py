@@ -226,6 +226,8 @@ with scope ("this" or "all") and order_matters.
 Rules:
 - Change only what the instruction asks to change. Keep everything else from the current goal.
 - Use object names exactly as they appear in the scene list (e.g. "white bowl#0"); for categories use the plain noun.
+- The category "object" means every non-container object in the scene. "Everything", "all of them", "the other things as well" means category "object" with scope "all". Objects marked static were simply not touched in the demonstration; the person may ask to include them.
+- Objects too large for a container are skipped automatically by the planner; you do not need to exclude them.
 - If the instruction asks for something the vocabulary cannot express or that no object in the scene supports, keep the goal unchanged and say why in the explanation.
 - Write a one-sentence task description a person would say to a robot, and a one-sentence explanation of what changed."""
 
