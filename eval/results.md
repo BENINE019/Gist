@@ -54,14 +54,14 @@ With narration: type **100%**, scope **90%**, clarifying question needed on **0/
 | Clip | Goal | Original: goal / copy | Shuffled scenes | Goal plan | Copy baseline | Episodes |
 | --- | --- | --- | --- | --- | --- | --- |
 | c01 | `put_all(pencil, white container#0)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
-| c02 | `arrange(object, line)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
+| c02 | `arrange(object, line)` | ✓ / ✓ | 10 | 40% | 0% | 5 |
 | c03 | `stack(small blue eraser#1, small blue eraser#0)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
 | c04 | `move(black wallet#0, next to, brown pencil#0)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
-| c05 | `swap(white scissors#0, black glasses#0)` | ✓ / ✗ | 10 | 100% | 0% | 11 |
+| c05 | `swap(white scissors#0, black glasses#0)` | ✗ / ✗ | 10 | 80% | 0% | 8 |
 | c06 | `put_all(object, white bowl#0)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
 | c07 | `move(blue eraser#0, leftmost)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
 | c08 | `move(black wallet#0, left)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
-| c09 | `move(black pencil#0, to)` | ✓ / ✓ | 10 | 100% | 10% | 11 |
+| c09 | `move(black pencil#0, to)` | ✗ / ✓ | 10 | 40% | 10% | 4 |
 | c10 | `put_all(pencil, white cup#0)` | ✓ / ✓ | 10 | 100% | 0% | 11 |
 
-Across 100 shuffled scenes: goal plan **100%**, copy baseline **1%**. **110 verified episodes from 10 phone demonstrations.** Shuffled scenes move every object; every second scene adds an extra object of the demonstrated kind and every third adds a distractor. Scenes where the goal already held before acting were rerolled. Success is judged against simulator state.
+Across 100 shuffled scenes: goal plan **86%**, copy baseline **1%**. **94 verified episodes from 10 phone demonstrations.** Shuffled scenes move every object; every second scene adds an extra object of the demonstrated kind and every third adds a distractor. Scenes where the goal already held before acting were rerolled. Success is judged against simulator state.

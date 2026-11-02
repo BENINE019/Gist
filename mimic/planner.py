@@ -130,18 +130,52 @@ def fits_in(obj: dict, cont: dict) -> bool:
     return long < opening
 
 
+CLEARANCE_CM = 2.0
+
+
+def free_spot(target, obj: dict, objects: list[dict], positions: dict, skip: set[str] = frozenset()):
+    """Nearest point to target where obj's footprint does not overlap any other object."""
+    r = half_extent(obj)
+    others = [(np.array(positions[o["key"]], float), half_extent(o)) for o in objects
+              if o["key"] != obj["key"] and o["key"] not in skip and not o.get("attached_to")]
+
+    def clear(p):
+        return all(np.linalg.norm(p - q) >= r + rq + CLEARANCE_CM for q, rq in others)
+
+    t = np.array(target, float)
+    if clear(t):
+        return t.tolist()
+    for radius in np.arange(2.0, 40.0, 2.0):           # spiral outward
+        for ang in np.linspace(0, 2 * np.pi, 16, endpoint=False):
+            p = t + radius * np.array([np.cos(ang), np.sin(ang)])
+            if clear(p):
+                return p.round(2).tolist()
+    return t.tolist()
+
+
 def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
-    """Return (steps, note). Steps: {object, place_xy, into, onto, carried}."""
+    """Return (steps, note). Steps: {object, place_xy, into, onto, carried}.
+
+    Place targets are checked against where every other object is at that point in the
+    plan (earlier steps included) and nudged to a free spot, since the simulator will
+    not stop two objects being set down on top of each other.
+    """
     t = goal["type"]
     steps: list[dict] = []
+    positions = {o["key"]: list(o["xy"]) for o in objects}
     carried_by = {o["attached_to"]: [] for o in objects if o.get("attached_to")}
     for o in objects:
         if o.get("attached_to"):
             carried_by[o["attached_to"]].append(o["key"])
 
     def step(obj, place_xy, into=None, onto=None):
+        if into is None and onto is None:
+            place_xy = free_spot(place_xy, obj, objects, positions)
         steps.append({"object": obj["key"], "place_xy": [round(float(place_xy[0]), 2), round(float(place_xy[1]), 2)],
                       "into": into, "onto": onto, "carried": carried_by.get(obj["key"], [])})
+        positions[obj["key"]] = list(place_xy)
+        for c in carried_by.get(obj["key"], []):
+            positions[c] = list(place_xy)
 
     if t == "put_all":
         cont = find_container(objects, goal.get("container", ""))
@@ -196,7 +230,7 @@ def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
             return [], "a or b not found"
         axy, bxy = list(a["xy"]), list(b["xy"])
         temp = [axy[0], axy[1] - (half_extent(a) * 2 + 12.0)]
-        step(a, temp)
+        step(a, temp)          # parked on a free spot near a's old place
         step(b, axy)
         step(a, bxy)
         return steps, f"{a['key']} <-> {b['key']}"
