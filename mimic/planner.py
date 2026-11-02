@@ -130,7 +130,7 @@ def fits_in(obj: dict, cont: dict) -> bool:
     return long < opening
 
 
-CLEARANCE_CM = 2.0
+OVERLAP_FRAC = 0.6     # closer than this share of the summed radii counts as overlapping (boxes are not circles)
 
 
 def free_spot(target, obj: dict, objects: list[dict], positions: dict, skip: set[str] = frozenset()):
@@ -140,7 +140,7 @@ def free_spot(target, obj: dict, objects: list[dict], positions: dict, skip: set
               if o["key"] != obj["key"] and o["key"] not in skip and not o.get("attached_to")]
 
     def clear(p):
-        return all(np.linalg.norm(p - q) >= r + rq + CLEARANCE_CM for q, rq in others)
+        return all(np.linalg.norm(p - q) >= OVERLAP_FRAC * (r + rq) for q, rq in others)
 
     t = np.array(target, float)
     if clear(t):
@@ -168,9 +168,9 @@ def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
         if o.get("attached_to"):
             carried_by[o["attached_to"]].append(o["key"])
 
-    def step(obj, place_xy, into=None, onto=None):
+    def step(obj, place_xy, into=None, onto=None, skip=frozenset()):
         if into is None and onto is None:
-            place_xy = free_spot(place_xy, obj, objects, positions)
+            place_xy = free_spot(place_xy, obj, objects, positions, skip)
         steps.append({"object": obj["key"], "place_xy": [round(float(place_xy[0]), 2), round(float(place_xy[1]), 2)],
                       "into": into, "onto": onto, "carried": carried_by.get(obj["key"], [])})
         positions[obj["key"]] = list(place_xy)
@@ -211,8 +211,9 @@ def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
         y = float(np.median([o["xy"][1] for o in items]))
         pitch = max(half_extent(o) for o in items) * 2 + 3.0
         x0 = float(np.mean([o["xy"][0] for o in items])) - pitch * (len(items) - 1) / 2
+        members = {o["key"] for o in items}
         for i, o in enumerate(items):
-            step(o, [x0 + i * pitch, y])
+            step(o, [x0 + i * pitch, y], skip=members)
         return steps, f"{len(items)} items in a row"
 
     if t == "stack":
@@ -230,9 +231,9 @@ def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
             return [], "a or b not found"
         axy, bxy = list(a["xy"]), list(b["xy"])
         temp = [axy[0], axy[1] - (half_extent(a) * 2 + 12.0)]
-        step(a, temp)          # parked on a free spot near a's old place
-        step(b, axy)
-        step(a, bxy)
+        step(a, temp)                      # parked on a free spot near a's old place
+        step(b, axy, skip={a["key"]})      # the vacated spots are the goal; the partner is not an obstacle
+        step(a, bxy, skip={b["key"]})
         return steps, f"{a['key']} <-> {b['key']}"
 
     return [], f"unknown goal type {t}"

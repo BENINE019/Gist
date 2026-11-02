@@ -95,9 +95,9 @@
     "generalize": {
       "goal_orig": true,
       "copy_orig": true,
-      "goal_shuf": 0.4,
+      "goal_shuf": 1.0,
       "copy_shuf": 0.0,
-      "episodes": 5,
+      "episodes": 11,
       "n_shuffled": 10
     }
   },
@@ -246,11 +246,11 @@
       }
     },
     "generalize": {
-      "goal_orig": false,
+      "goal_orig": true,
       "copy_orig": false,
-      "goal_shuf": 0.8,
+      "goal_shuf": 0.9,
       "copy_shuf": 0.0,
-      "episodes": 8,
+      "episodes": 10,
       "n_shuffled": 10
     }
   },
@@ -454,11 +454,11 @@
       }
     },
     "generalize": {
-      "goal_orig": false,
+      "goal_orig": true,
       "copy_orig": true,
-      "goal_shuf": 0.4,
+      "goal_shuf": 0.8,
       "copy_shuf": 0.1,
-      "episodes": 4,
+      "episodes": 9,
       "n_shuffled": 10
     }
   },
