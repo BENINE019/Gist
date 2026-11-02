@@ -240,10 +240,17 @@ def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
 
 
 def check(goal: dict, objects: list[dict], final_xy: dict[str, list[float]]) -> tuple[bool, str]:
-    """Does the final scene satisfy the goal? Uses only geometry."""
+    """Does the final scene satisfy the goal? Uses only geometry.
+
+    When a target spot is occupied by another object in this scene, the nearest free
+    spot stands in for it (the planner makes the same substitution)."""
     t = goal["type"]
     pos = {k: np.array(v, float) for k, v in final_xy.items()}
     by_key = {o["key"]: o for o in objects}
+
+    def intended(spot, obj, skip=frozenset()):
+        others = {k: v.tolist() for k, v in pos.items()}
+        return np.array(free_spot(spot, obj, objects, others, skip | {obj["key"]}), float)
 
     if t == "put_all":
         cont = find_container(objects, goal.get("container", ""))
@@ -288,8 +295,11 @@ def check(goal: dict, objects: list[dict], final_xy: dict[str, list[float]]) -> 
             if "behind" in r or "back" in r or "up" in r:
                 return d[1] > 5, "moved back"
             if goal.get("place_xy"):
-                err = np.linalg.norm(p - np.array(goal["place_xy"]))
-                return err < NEAR_CM, f"{err:.1f} cm from the demonstrated spot"
+                spot = intended(goal["place_xy"], obj)
+                err = np.linalg.norm(p - spot)
+                moved_spot = np.linalg.norm(spot - np.array(goal["place_xy"])) > 0.5
+                note = " (spot was occupied; nearest free spot used)" if moved_spot else ""
+                return err <= NEAR_CM, f"{err:.1f} cm from the demonstrated spot{note}"
             return np.linalg.norm(d) > 5, "moved" if np.linalg.norm(d) > 5 else "did not move"
         a = pos[anchor["key"]]
         gap = half_extent(anchor) + half_extent(obj)
@@ -333,9 +343,11 @@ def check(goal: dict, objects: list[dict], final_xy: dict[str, list[float]]) -> 
         b = find_object(objects, goal.get("b", ""))
         if a is None or b is None:
             return False, "a or b not found"
-        da = np.linalg.norm(pos[a["key"]] - np.array(b["xy"]))
-        db = np.linalg.norm(pos[b["key"]] - np.array(a["xy"]))
-        ok = da < NEAR_CM and db < NEAR_CM
+        sa = intended(b["xy"], a, {b["key"]})
+        sb = intended(a["xy"], b, {a["key"]})
+        da = np.linalg.norm(pos[a["key"]] - sa)
+        db = np.linalg.norm(pos[b["key"]] - sb)
+        ok = da <= NEAR_CM and db <= NEAR_CM
         return ok, f"a {da:.1f} cm from b's spot, b {db:.1f} cm from a's spot"
 
     return False, f"unknown goal type {t}"
