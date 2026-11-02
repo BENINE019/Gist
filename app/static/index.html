@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gist: Show it once. It gets the gist.</title>
+<title>Mimic: teach a robot once, from a phone video</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -65,6 +65,12 @@
   .narr{font-size:17px;line-height:1.6;max-width:70ch}
   .narr time{color:var(--ink-2);font-size:13px;margin-right:6px}
 
+  .edit{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  .edit input[type=text]{font:inherit;font-size:15px;padding:9px 12px;border:1px solid var(--rule);border-radius:6px;flex:1 1 320px;background:#fff;color:var(--ink)}
+  .edit button{font:600 15px var(--sans);padding:9px 14px;border:1px solid var(--ink);background:#fff;border-radius:6px;cursor:pointer;color:var(--ink)}
+  .edit button[disabled]{opacity:.55;cursor:progress}
+  .edited{background:#FFF6D6;border-left:4px solid var(--pencil);padding:10px 14px;margin-top:12px}
+  .edited .reset{margin-left:10px;font-size:14px;color:var(--ink-2)}
   .upload{border:1px dashed var(--rule);border-radius:6px;padding:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
   .upload input{font:inherit}
   .bar{height:6px;background:var(--paper-2);border-radius:3px;overflow:hidden;flex:1 1 200px}
@@ -105,6 +111,13 @@
     <ul class="cands" id="cands"></ul>
     <div class="ask" id="ask" hidden></div>
     <p class="quiet" id="ablation"></p>
+    <div class="edit">
+      <label for="editText" class="quiet" style="flex-basis:100%">Change the goal in plain words. The robot keeps the goal, not the motion, so you can tell it what to do differently.</label>
+      <input type="text" id="editText" placeholder="e.g. same thing, but into the bowl / only the red ones / leave the eraser where it is">
+      <button id="editBtn">Apply</button>
+      <span class="quiet" id="editStatus"></span>
+    </div>
+    <div class="edited" id="edited" hidden></div>
   </section>
 
   <section id="secEvents">
@@ -139,6 +152,8 @@ const $ = (s) => document.querySelector(s);
 let current = null;
 let busy = false;        // a shuffle is rendering
 let busyTimer = null;
+let goalOverride = null; // an edited goal, if the user changed it
+let inferredTaskHTML = "";
 
 async function getJSON(url, opts) {
   const r = await fetch(url, opts);
@@ -179,6 +194,8 @@ function setBusy(on, label) {
 async function loadClip(name) {
   if (busy) { $("#shuffleStatus").textContent += " Finish this shuffle before switching clips."; return; }
   current = name;
+  goalOverride = null; $("#edited").hidden = true; $("#editText").value = ""; $("#editStatus").textContent = "";
+  $("#shuffleBtn").textContent = "Shuffle the scene and run both robots";
   document.querySelectorAll("#picker button").forEach(b => b.setAttribute("aria-pressed", String(b.title === name)));
   const d = await getJSON("/api/clip/" + name);
   $("#result").hidden = true; $("#shuffleStatus").textContent = "";
@@ -187,7 +204,8 @@ async function loadClip(name) {
   $("#replayVideo").src = (scene0 && scene0.goal_video) || d.replay || "";
 
   const it = d.intent || {}, top = (it.candidates || [])[0];
-  $("#task").innerHTML = esc(it.task_sentence || "") + (top ? `<span class="goal">${esc(top.goal)}</span>` : "");
+  inferredTaskHTML = esc(it.task_sentence || "") + (top ? `<span class="goal">${esc(top.goal)}</span>` : "");
+  $("#task").innerHTML = inferredTaskHTML;
 
   const n = d.narration;
   $("#narration").innerHTML = n && n.turns && n.turns.length
@@ -233,7 +251,10 @@ $("#shuffleBtn").onclick = async () => {
   setBusy(true, "Shuffling the objects and rendering both robots:");
   try {
     const q = `?extra=${$("#optExtra").checked}&distractor=${$("#optDistractor").checked}`;
-    const r = await getJSON("/api/shuffle/" + startedFor + q, {method: "POST"});
+    const opts = goalOverride
+      ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({goal: goalOverride})}
+      : {method: "POST"};
+    const r = await getJSON("/api/shuffle/" + startedFor + q, opts);
     if (startedFor !== current) return;   // user moved on; do not show a result for another clip
     $("#result").hidden = false;
     $("#goalVideo").src = r.goal_video; $("#copyVideo").src = r.copy_video;
@@ -246,6 +267,30 @@ $("#shuffleBtn").onclick = async () => {
     $("#result").scrollIntoView({behavior: "smooth", block: "nearest"});
   } catch (e) { setBusy(false); st.textContent = "That did not work: " + e.message; }
 };
+
+$("#editBtn").onclick = async () => {
+  const text = $("#editText").value.trim(), st = $("#editStatus"), btn = $("#editBtn");
+  if (!text || !current) return;
+  btn.disabled = true; st.textContent = "Asking Muse Spark to edit the goal";
+  try {
+    const r = await getJSON("/api/edit/" + current, {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({instruction: text, goal: goalOverride})});
+    st.textContent = "";
+    const box = $("#edited"); box.hidden = false;
+    if (r.changed) {
+      goalOverride = r.goal;
+      box.innerHTML = `New goal: <code>${esc(r.goal.goal)}</code> (scope ${esc(r.goal.scope)}). ${esc(r.explanation)} Plan: ${esc(r.plan_note)}.
+        <a href="#" class="reset" id="resetGoal">Back to the inferred goal</a>`;
+      $("#task").innerHTML = esc(r.task_sentence) + `<span class="goal">${esc(r.goal.goal)}</span> <span class="quiet">(edited)</span>`;
+      $("#resetGoal").onclick = (e) => { e.preventDefault(); goalOverride = null; box.hidden = true; $("#task").innerHTML = inferredTaskHTML; $("#editText").value = ""; $("#shuffleBtn").textContent = "Shuffle the scene and run both robots"; };
+      $("#shuffleBtn").textContent = "Shuffle the scene and run the edited goal";
+    } else {
+      box.textContent = "Goal unchanged: " + r.explanation;
+    }
+  } catch (e) { st.textContent = "That did not work: " + e.message; }
+  btn.disabled = false;
+};
+$("#editText").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#editBtn").click(); });
 
 $("#uploadBtn").onclick = async () => {
   const f = $("#file").files[0], st = $("#uploadStatus"), bar = $("#bar i");

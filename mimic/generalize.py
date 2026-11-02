@@ -30,6 +30,7 @@ from pathlib import Path
 import numpy as np
 
 from . import planner
+from .planner import box_at, boxes_overlap
 from .sim import Scene, fit_to_reach, load_clip, plan_from_events, scene_objects
 
 MIN_GAP_CM = 3.0
@@ -59,17 +60,16 @@ def shuffle(objects: list[dict], rng: np.random.Generator, extra: bool, distract
         objs.append({"key": "yellow block#9", "concept": "yellow block", "role": "new", "attached_to": None,
                      "xy": [0.0, 0.0], "w_cm": 4.0, "d_cm": 4.0, "h_cm": 3.0, "container": False,
                      "rgb": (0.95, 0.85, 0.2)})
-    placed: list[tuple[np.ndarray, float]] = []
+    placed: list[tuple] = []
     for o in objs:
         if o.get("attached_to"):
             continue
-        r = max(o["w_cm"], o["d_cm"]) / 2
         for _ in range(300):
             p = rng.uniform(lo, hi)
-            if all(np.linalg.norm(p - q) > r + rq + MIN_GAP_CM for q, rq in placed):
+            if not any(boxes_overlap(box_at(o, p), b, MIN_GAP_CM) for b in placed):
                 break
         o["xy"] = [round(float(p[0]), 1), round(float(p[1]), 1)]
-        placed.append((p, r))
+        placed.append(box_at(o, o["xy"]))
     # attached objects ride with their parent, keeping the original offset
     by_key = {o["key"]: o for o in objs}
     for o in objs:
@@ -87,6 +87,19 @@ def run(objects: list[dict], steps: list[dict], goal: dict, render: bool, out_di
     ok, why = planner.check(goal, objects, res["final_xy_cm"])
     res["goal_satisfied"] = bool(ok)
     res["why"] = why
+    # any two objects left intersecting on the table? (containers and things inside them excepted)
+    flat = [o for o in objects if not o["container"] and not o.get("attached_to")]
+    inside = {s["object"] for s in steps if s.get("into")} | {s["object"] for s in steps if s.get("onto")}
+    pairs = []
+    for i, a in enumerate(flat):
+        for b in flat[i + 1:]:
+            if a["key"] in inside or b["key"] in inside:
+                continue
+            if boxes_overlap(box_at(a, res["final_xy_cm"][a["key"]]), box_at(b, res["final_xy_cm"][b["key"]]), 0.0):
+                pairs.append(f"{a['key']} / {b['key']}")
+    res["overlaps"] = pairs
+    if pairs:
+        res["why"] += f"; OVERLAP: {', '.join(pairs)}"
     if out_dir is not None:
         res_light = {k: v for k, v in res.items()}
         (out_dir / "result.json").write_text(json.dumps(res_light, indent=2) + "\n")
@@ -138,6 +151,9 @@ def main() -> None:
 
         steps_copy = plan_from_events(ev, objects)
         k = fit_to_reach(objects, [steps_copy])   # copy positions scale with the scene; the goal plan is made after
+        if i > 0 and k < 1.0:
+            # shrinking the layout can make footprints touch; push them apart (shuffled scenes only)
+            planner.resolve_overlaps(objects)
         steps_goal, note = planner.plan(goal, objects)
         rg = run(objects, steps_goal, goal, render, scene_dir / "goal")
         rc = run(objects, steps_copy, goal, render, scene_dir / "copy")

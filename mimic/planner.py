@@ -130,17 +130,27 @@ def fits_in(obj: dict, cont: dict) -> bool:
     return long < opening
 
 
-OVERLAP_FRAC = 0.6     # closer than this share of the summed radii counts as overlapping (boxes are not circles)
+BOX_MARGIN_CM = 1.5    # free space required between object boxes
+
+
+def box_at(o: dict, xy) -> tuple[float, float, float, float]:
+    """Axis-aligned footprint of o centred at xy (objects in the simulator are axis-aligned boxes)."""
+    hx, hy = o["w_cm"] / 2, o["d_cm"] / 2
+    return xy[0] - hx, xy[1] - hy, xy[0] + hx, xy[1] + hy
+
+
+def boxes_overlap(a, b, margin: float = BOX_MARGIN_CM) -> bool:
+    return not (a[2] + margin <= b[0] or b[2] + margin <= a[0] or a[3] + margin <= b[1] or b[3] + margin <= a[1])
 
 
 def free_spot(target, obj: dict, objects: list[dict], positions: dict, skip: set[str] = frozenset()):
     """Nearest point to target where obj's footprint does not overlap any other object."""
-    r = half_extent(obj)
-    others = [(np.array(positions[o["key"]], float), half_extent(o)) for o in objects
+    others = [box_at(o, positions[o["key"]]) for o in objects
               if o["key"] != obj["key"] and o["key"] not in skip and not o.get("attached_to")]
 
     def clear(p):
-        return all(np.linalg.norm(p - q) >= OVERLAP_FRAC * (r + rq) for q, rq in others)
+        mine = box_at(obj, p)
+        return not any(boxes_overlap(mine, b) for b in others)
 
     t = np.array(target, float)
     if clear(t):
@@ -151,6 +161,25 @@ def free_spot(target, obj: dict, objects: list[dict], positions: dict, skip: set
             if clear(p):
                 return p.round(2).tolist()
     return t.tolist()
+
+
+def resolve_overlaps(objects: list[dict]) -> int:
+    """Push apart any objects whose footprints intersect (used after a layout is rescaled)."""
+    positions = {o["key"]: list(o["xy"]) for o in objects}
+    moved = 0
+    for o in objects:
+        if o.get("attached_to"):
+            continue
+        p = free_spot(o["xy"], o, objects, positions)
+        if np.linalg.norm(np.subtract(p, o["xy"])) > 0.1:
+            o["xy"] = [round(float(p[0]), 2), round(float(p[1]), 2)]
+            positions[o["key"]] = list(o["xy"])
+            moved += 1
+    by_key = {o["key"]: o for o in objects}
+    for o in objects:  # attached objects follow their parent
+        if o.get("attached_to") in by_key:
+            pass
+    return moved
 
 
 def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
@@ -232,8 +261,8 @@ def plan(goal: dict, objects: list[dict]) -> tuple[list[dict], str]:
         axy, bxy = list(a["xy"]), list(b["xy"])
         temp = [axy[0], axy[1] - (half_extent(a) * 2 + 12.0)]
         step(a, temp)                      # parked on a free spot near a's old place
-        step(b, axy, skip={a["key"]})      # the vacated spots are the goal; the partner is not an obstacle
-        step(a, bxy, skip={b["key"]})
+        step(b, axy)                       # a is parked, so a's old spot is free
+        step(a, bxy)                       # b now sits at a's old spot; nudged if the two footprints differ
         return steps, f"{a['key']} <-> {b['key']}"
 
     return [], f"unknown goal type {t}"
@@ -343,8 +372,8 @@ def check(goal: dict, objects: list[dict], final_xy: dict[str, list[float]]) -> 
         b = find_object(objects, goal.get("b", ""))
         if a is None or b is None:
             return False, "a or b not found"
-        sa = intended(b["xy"], a, {b["key"]})
-        sb = intended(a["xy"], b, {a["key"]})
+        sa = intended(b["xy"], a)
+        sb = intended(a["xy"], b)
         da = np.linalg.norm(pos[a["key"]] - sa)
         db = np.linalg.norm(pos[b["key"]] - sb)
         ok = da <= NEAR_CM and db <= NEAR_CM

@@ -217,18 +217,89 @@ def infer(video: Path, out_dir: Path, model: str, use_narration: bool) -> dict:
     return data
 
 
+EDIT_SYSTEM = """You edit a robot's structured goal according to a person's plain-language instruction.
+
+The goal uses this vocabulary (fill only the arguments of the chosen type, leave the rest as empty strings):
+  put_all(category, container)  move(object, relation, anchor)  arrange(category, pattern)  stack(top, base)  swap(a, b)
+with scope ("this" or "all") and order_matters.
+
+Rules:
+- Change only what the instruction asks to change. Keep everything else from the current goal.
+- Use object names exactly as they appear in the scene list (e.g. "white bowl#0"); for categories use the plain noun.
+- If the instruction asks for something the vocabulary cannot express or that no object in the scene supports, keep the goal unchanged and say why in the explanation.
+- Write a one-sentence task description a person would say to a robot, and a one-sentence explanation of what changed."""
+
+EDIT_SCHEMA = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "edited_goal",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "task_sentence": {"type": "string"},
+                "goal": SCHEMA["json_schema"]["schema"]["properties"]["candidates"]["items"],
+                "explanation": {"type": "string"},
+                "changed": {"type": "boolean"},
+            },
+            "required": ["task_sentence", "goal", "explanation", "changed"],
+            "additionalProperties": False,
+        },
+    },
+}
+
+
+def edit_goal(goal: dict, instruction: str, objects: list[dict], model: str = DEFAULT_MODEL) -> dict:
+    """Return {task_sentence, goal, explanation, changed}: the goal edited by a plain-language instruction."""
+    key = os.environ.get("MODEL_API_KEY")
+    if not key:
+        raise RuntimeError("Set MODEL_API_KEY first.")
+    scene = "\n".join(f"- {o['key']} ({o.get('role', '')}{', container' if o.get('container') else ''})" for o in objects)
+    current = {k: goal.get(k, "") for k in ("type", "category", "container", "object", "relation", "anchor",
+                                              "pattern", "top", "base", "a", "b", "scope", "order_matters", "order")}
+    client = OpenAI(base_url=BASE_URL, api_key=key)
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": EDIT_SYSTEM},
+            {"role": "user", "content": f"OBJECTS IN THE SCENE:\n{scene}\n\nCURRENT GOAL:\n{json.dumps(current)}\n\n"
+                                         f"INSTRUCTION FROM THE PERSON:\n{instruction}\n\nReturn the edited goal."},
+        ],
+        response_format=EDIT_SCHEMA,
+    )
+    data = json.loads(resp.choices[0].message.content)
+    g = data["goal"]
+    g["goal"] = goal_string(g)
+    g.setdefault("confidence", 1.0)
+    g.setdefault("reason", data.get("explanation", ""))
+    if goal.get("place_xy") and g["type"] == "move" and not g.get("anchor"):
+        g["place_xy"] = goal["place_xy"]
+    data["goal"] = g
+    data["instruction"] = instruction
+    data["model"] = model
+    return data
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Stage 6b: infer the goal with Muse Spark")
     p.add_argument("video", type=Path)
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--no-narration", action="store_true", help="ablation: ignore the transcript")
     p.add_argument("--output", type=Path, help="default: out/<clip name>")
+    p.add_argument("--edit", help="edit the inferred goal with a plain-language instruction instead of inferring")
     args = p.parse_args()
 
     out_dir = args.output or Path("out") / args.video.stem
     for need in ("table_tracks.json", "events.json"):
         if not (out_dir / need).exists():
             p.error(f"{out_dir / need} not found; run the earlier stages first")
+
+    if args.edit:
+        intent = json.loads((out_dir / "intent.json").read_text())
+        events = json.loads((out_dir / "events.json").read_text())
+        res = edit_goal(intent["candidates"][0], args.edit, events["objects"], args.model)
+        (out_dir / "intent_edited.json").write_text(json.dumps(res, indent=2, ensure_ascii=False) + "\n")
+        print(f"Task: {res['task_sentence']}\n  {res['goal']['goal']}  (scope={res['goal']['scope']})\n  {res['explanation']}")
+        return
 
     data = infer(args.video, out_dir, args.model, not args.no_narration)
     name = "intent.json" if not args.no_narration else "intent_no_narration.json"

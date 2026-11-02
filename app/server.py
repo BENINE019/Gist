@@ -26,7 +26,7 @@ import uuid
 from pathlib import Path
 
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Body, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -39,6 +39,7 @@ MARKER_CM = float(os.environ.get("MARKER_CM", "9.5"))
 sys.path.insert(0, str(ROOT))
 from mimic import planner  # noqa: E402
 from mimic.generalize import shuffle  # noqa: E402
+from mimic.intent import edit_goal  # noqa: E402
 from mimic.sim import Scene, fit_to_reach, load_clip, plan_from_events, scene_objects  # noqa: E402
 
 app = FastAPI(title="Mimic")
@@ -106,13 +107,14 @@ def api_clip(name: str):
 
 
 @app.post("/api/shuffle/{name}")
-def api_shuffle(name: str, extra: bool = False, distractor: bool = False):
-    """One fresh shuffled scene, both robots rendered. Takes 15 to 60 seconds."""
+def api_shuffle(name: str, extra: bool = False, distractor: bool = False, body: dict | None = Body(None)):
+    """One fresh shuffled scene, both robots rendered. Takes 15 to 60 seconds.
+    Optional JSON body {"goal": {...}} runs that goal instead of the inferred one."""
     d = OUT / name
     intent = read(d / "intent.json")
     if not intent or not intent.get("candidates"):
         raise HTTPException(404, "no goal for this clip")
-    goal = intent["candidates"][0]
+    goal = (body or {}).get("goal") or intent["candidates"][0]
     with SIM_LOCK:
         tt, ev = load_clip(d)
         base = scene_objects(tt, ev)
@@ -139,6 +141,29 @@ def api_shuffle(name: str, extra: bool = False, distractor: bool = False):
             "copy_ok": bool(ok_c), "copy_why": why_c, "copy_steps": rc["steps"],
             "goal_video": f"/out/{name}/generalize/live/goal/episode.mp4?t={stamp}",
             "copy_video": f"/out/{name}/generalize/live/copy/episode.mp4?t={stamp}"}
+
+
+@app.post("/api/edit/{name}")
+def api_edit(name: str, body: dict = Body(...)):
+    """Edit the goal with a plain-language instruction. Body: {"instruction": "...", "goal": {...} (optional)}."""
+    d = OUT / name
+    intent = read(d / "intent.json")
+    events = read(d / "events.json")
+    if not intent or not events:
+        raise HTTPException(404, "no goal for this clip")
+    instruction = (body.get("instruction") or "").strip()
+    if not instruction:
+        raise HTTPException(400, "empty instruction")
+    base = body.get("goal") or intent["candidates"][0]
+    try:
+        res = edit_goal(base, instruction, events["objects"])
+    except Exception as e:  # surface the model error to the page
+        raise HTTPException(502, f"goal edit failed: {e}")
+    scene = scene_objects(*load_clip(d))
+    steps, note = planner.plan(res["goal"], scene)
+    res["plan_note"] = note
+    res["plan_steps"] = len(steps)
+    return res
 
 
 def run_pipeline(job: dict, src: Path, name: str) -> None:
