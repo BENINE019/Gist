@@ -61,6 +61,11 @@
   .cands li{margin:4px 0}
   .conf{display:inline-block;height:8px;background:var(--pencil);border-radius:4px;vertical-align:middle;margin:0 8px 0 0}
   .ask{background:#FFF6D6;border-left:4px solid var(--pencil);padding:10px 14px;margin-top:12px}
+  .ask .choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .ask button{font:500 14px var(--sans);padding:7px 12px;border:1px solid var(--ink);background:#fff;border-radius:6px;cursor:pointer;color:var(--ink)}
+  .ask button:hover{background:var(--ink);color:#fff}
+  .cands .use{font-size:13px;color:var(--ink-2);margin-left:8px;cursor:pointer;text-decoration:underline}
+  .mute{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ink-2);margin-left:14px;font-weight:400}
   .quiet{color:var(--ink-2);font-size:14px}
   .narr{font-size:17px;line-height:1.6;max-width:70ch}
   .narr time{color:var(--ink-2);font-size:13px;margin-right:6px}
@@ -106,7 +111,8 @@
   </div>
 
   <section id="secGoal">
-    <h2>What it thinks you meant <small>Muse Spark, from the events and your narration</small></h2>
+    <h2>What it thinks you meant <small>Muse Spark, from the events and your narration</small>
+      <label class="mute"><input type="checkbox" id="muteNarration"> pretend I said nothing</label></h2>
     <p class="narr" id="narration"></p>
     <ul class="cands" id="cands"></ul>
     <div class="ask" id="ask" hidden></div>
@@ -154,6 +160,7 @@ let busy = false;        // a shuffle is rendering
 let busyTimer = null;
 let goalOverride = null; // an edited goal, if the user changed it
 let inferredTaskHTML = "";
+let clipData = null;     // the last /api/clip payload
 
 async function getJSON(url, opts) {
   const r = await fetch(url, opts);
@@ -203,25 +210,9 @@ async function loadClip(name) {
   const scene0 = d.scenes.find(s => s.scene === 0);
   $("#replayVideo").src = (scene0 && scene0.goal_video) || d.replay || "";
 
-  const it = d.intent || {}, top = (it.candidates || [])[0];
-  inferredTaskHTML = esc(it.task_sentence || "") + (top ? `<span class="goal">${esc(top.goal)}</span>` : "");
-  $("#task").innerHTML = inferredTaskHTML;
-
-  const n = d.narration;
-  $("#narration").innerHTML = n && n.turns && n.turns.length
-    ? n.turns.map(t => `<time>${t.start_s.toFixed(1)}s</time>“${esc(t.text)}”`).join("<br>")
-    : "<span class='quiet'>No narration for this clip.</span>";
-  $("#cands").innerHTML = (it.candidates || []).map(c =>
-    `<li><span class="conf" style="width:${Math.max(4, Math.round(c.confidence * 160))}px"></span><code>${esc(c.goal)}</code>
-     <span class="quiet"> ${Math.round(c.confidence * 100)}%, scope ${esc(c.scope)}${c.order_matters ? ", in order" : ""}. ${esc(c.reason)}</span></li>`).join("");
-  const ask = $("#ask");
-  if (it.needs_clarification) { ask.hidden = false; ask.textContent = "Before acting, the robot would ask: " + it.clarifying_question; }
-  else ask.hidden = true;
-  const wo = d.intent_no_narration;
-  $("#ablation").textContent = wo && wo.candidates && wo.candidates.length
-    ? `Without the narration it would have read this as ${wo.candidates[0].goal} at ${Math.round(wo.candidates[0].confidence * 100)}%` +
-      (wo.needs_clarification ? ` and asked: “${wo.clarifying_question}”` : "") + "."
-    : "";
+  clipData = d;
+  $("#muteNarration").checked = false;
+  renderIntent();
 
   $("#topdown").src = d.topdown || ""; $("#timeline").src = d.timeline || "";
   const ev = d.events || {objects: [], events: []};
@@ -267,6 +258,58 @@ $("#shuffleBtn").onclick = async () => {
     $("#result").scrollIntoView({behavior: "smooth", block: "nearest"});
   } catch (e) { setBusy(false); st.textContent = "That did not work: " + e.message; }
 };
+
+function renderIntent() {
+  const d = clipData; if (!d) return;
+  const muted = $("#muteNarration").checked;
+  const it = (muted ? d.intent_no_narration : d.intent) || {};
+  const top = (it.candidates || [])[0];
+  inferredTaskHTML = esc(it.task_sentence || "") + (top ? `<span class="goal">${esc(top.goal)}</span>` : "") + (muted ? ` <span class="quiet">(narration ignored)</span>` : "");
+  if (!goalOverride) $("#task").innerHTML = inferredTaskHTML;
+  if (muted) goalOverride = null;
+
+  const n = d.narration;
+  $("#narration").innerHTML = muted
+    ? "<span class='quiet'>Narration hidden from the model. It now has only the first and last frame and the events to go on.</span>"
+    : (n && n.turns && n.turns.length
+        ? n.turns.map(t => `<time>${t.start_s.toFixed(1)}s</time>“${esc(t.text)}”`).join("<br>")
+        : "<span class='quiet'>No narration for this clip.</span>");
+
+  $("#cands").innerHTML = (it.candidates || []).map((c, i) =>
+    `<li><span class="conf" style="width:${Math.max(4, Math.round(c.confidence * 160))}px"></span><code>${esc(c.goal)}</code>
+     <span class="quiet"> ${Math.round(c.confidence * 100)}%, scope ${esc(c.scope)}${c.order_matters ? ", in order" : ""}. ${esc(c.reason)}</span>
+     ${i > 0 ? `<span class="use" data-i="${i}">run this one instead</span>` : ""}</li>`).join("");
+  document.querySelectorAll("#cands .use").forEach(el => el.onclick = () => chooseCandidate(it.candidates[+el.dataset.i], "you picked this reading"));
+
+  const ask = $("#ask");
+  if (it.needs_clarification && it.candidates && it.candidates.length > 1) {
+    ask.hidden = false;
+    ask.innerHTML = `Before acting, the robot asks: <strong>${esc(it.clarifying_question)}</strong>
+      <div class="choices">${it.candidates.slice(0, 3).map((c, i) => `<button data-i="${i}">${esc(c.goal)}</button>`).join("")}</div>`;
+    ask.querySelectorAll("button").forEach(b => b.onclick = () => chooseCandidate(it.candidates[+b.dataset.i], "you answered"));
+  } else ask.hidden = true;
+
+  const other = (muted ? d.intent : d.intent_no_narration);
+  $("#ablation").textContent = other && other.candidates && other.candidates.length
+    ? (muted ? `With the narration it read this as ${other.candidates[0].goal} at ${Math.round(other.candidates[0].confidence * 100)}%` +
+               (other.needs_clarification ? " and still asked." : " and did not need to ask.")
+             : `Without the narration it would have read this as ${other.candidates[0].goal} at ${Math.round(other.candidates[0].confidence * 100)}%` +
+               (other.needs_clarification ? ` and asked: “${other.clarifying_question}”` : "") + ".")
+    : "";
+}
+
+function chooseCandidate(c, how) {
+  goalOverride = c;
+  $("#task").innerHTML = `<span class="goal">${esc(c.goal)}</span> <span class="quiet">(${how})</span>`;
+  $("#ask").hidden = true;
+  $("#shuffleBtn").textContent = "Shuffle the scene and run the chosen goal";
+  const box = $("#edited"); box.hidden = false;
+  box.innerHTML = `Running <code>${esc(c.goal)}</code> (${how}). <a href="#" class="reset" id="resetGoal">Back to the inferred goal</a>`;
+  $("#resetGoal").onclick = (e) => { e.preventDefault(); goalOverride = null; box.hidden = true; $("#shuffleBtn").textContent = "Shuffle the scene and run both robots"; renderIntent(); };
+  $("#shuffleBtn").scrollIntoView({behavior: "smooth", block: "center"});
+}
+
+$("#muteNarration").onchange = () => { goalOverride = null; $("#edited").hidden = true; $("#shuffleBtn").textContent = "Shuffle the scene and run both robots"; renderIntent(); };
 
 $("#editBtn").onclick = async () => {
   const text = $("#editText").value.trim(), st = $("#editStatus"), btn = $("#editBtn");

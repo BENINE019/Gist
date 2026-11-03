@@ -1,9 +1,9 @@
-# Gist
+# Grasp
 
-**Show it once. It gets the gist.**
+**Show it once. It grasps what you meant.**
 
 Film yourself doing a task on your phone, once, while saying what you are doing.
-Gist works out what you meant, not just what you did, and then finishes the same
+Grasp works out what you meant, not just what you did, and then finishes the same
 task in scenes it has never seen: objects moved, extra objects added, distractors
 on the table. Every successful run becomes a robot training episode.
 
@@ -21,7 +21,7 @@ that inferred the goal does not.
 
 | | Original scene | 100 shuffled scenes |
 | --- | --- | --- |
-| Goal plan (Gist) | 10 / 10 | **100%** |
+| Goal plan (Grasp) | 10 / 10 | **100%** |
 | Copy the demonstration | 9 / 10 | **1%** |
 
 Ten phone demonstrations in, 110 verified episodes out.
@@ -46,7 +46,7 @@ inspected on its own.
 6. **Infer the goal** (Muse Spark, Muse Voice Transcribe). The first and last frame,
    the event list and the narration go in; a structured goal comes out, in a
    five-type vocabulary, with ranked candidates and confidences. If the top two are
-   close, Gist asks a clarifying question instead of guessing.
+   close, Grasp asks a clarifying question instead of guessing.
 7. **Replay and plan** (MuJoCo, Franka Panda). Two robots in the demonstrated scene:
    one copies the recorded motions, one plans from the goal.
 8. **Generalize.** The scene is shuffled; every second scene gets an extra object of
@@ -97,14 +97,14 @@ were rerolled. In the original scene both robots succeed on 9 of 10 clips; the c
 misses once on a 4 cm tolerance versus the human's own placement.
 
 **Dataset.** 110 verified episodes, 45,792 frames, 10 task sentences, exported in the
-LeRobot v2.1 layout (`python -m mimic.export --name gist_v1`). Each frame holds seven
+LeRobot v2.1 layout (`python -m mimic.export --name grasp_v1`). Each frame holds seven
 joint angles plus gripper opening as `observation.state`, the next frame as `action`,
 and a 640 x 480 video from a fixed camera.
 
 ## Quick start
 
 ```bash
-git clone https://github.com/BENINE019/Gist.git && cd gist
+git clone https://github.com/BENINE019/Grasp.git && cd gist
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git ~/mujoco_menagerie
@@ -153,7 +153,7 @@ actions; MimicPlay, Phantom and EgoMimic train policies from human video, someti
 dedicated capture rigs; UMI and DexCap collect demonstrations without a robot but with
 custom hardware.
 
-Gist is not a new method. Its difference is setup and scope: a phone and one printed
+Grasp is not a new method. Its difference is setup and scope: a phone and one printed
 marker, no task-specific training, narration as the disambiguating signal, a goal-level
 representation that generalizes across layouts, and an end-to-end tool built on hosted
 foundation models in eight days.
@@ -189,7 +189,7 @@ person. Dates are Bangkok time.
 | Oct 29 | Events: rest intervals, hand-contact filtering, container snapping, rigid grouping, dedup |
 | Oct 30 | Narration transcription; goal inference (prompt v1 to v3) |
 | Oct 31 | MuJoCo simulator with IK, planner for five goal types, shuffled-scene generalization, LeRobot export |
-| Nov 1 | Evaluation tables, no-narration ablation, project renamed to Gist |
+| Nov 1 | Evaluation tables, no-narration ablation, project renamed to Grasp |
 | Nov 2 | Web demo with live shuffle and upload |
 
 `sam_api.py` is Meta's helper from the Model API cookbook (MIT licence), included
