@@ -104,7 +104,7 @@ and a 640 x 480 video from a fixed camera.
 ## Quick start
 
 ```bash
-git clone https://github.com/BENINE019/Grasp.git && cd gist
+git clone https://github.com/BENINE019/Grasp.git && cd Grasp
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git ~/mujoco_menagerie

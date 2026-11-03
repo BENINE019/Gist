@@ -455,9 +455,9 @@
     },
     "generalize": {
       "goal_orig": true,
-      "copy_orig": true,
+      "copy_orig": false,
       "goal_shuf": 1.0,
-      "copy_shuf": 0.1,
+      "copy_shuf": 0.0,
       "episodes": 11,
       "n_shuffled": 10
     }
