@@ -10,8 +10,8 @@ on the table. Every successful run becomes a robot training episode.
 Built solo for the Meta Global AI Developer Hackathon (Oct 27 to Nov 4, 2026),
 indie developer track, problem statement *Push the Frontier*.
 
-- Demo video: *(https://automatically-syntax-charges-constant.trycloudflare.com/)*
-- Live demo (upload your own clip, shuffle the scene): *(link)*
+- Demo video: *(https://youtu.be/A6R3YccEt0k)*
+- Live demo (upload your own clip, shuffle the scene): *(https://automatically-syntax-charges-constant.trycloudflare.com/)*
 - Results: [eval/results.md](eval/results.md)
 
 ## The claim, in one picture
