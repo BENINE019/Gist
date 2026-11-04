@@ -42,7 +42,7 @@ from mimic.generalize import shuffle  # noqa: E402
 from mimic.intent import edit_goal  # noqa: E402
 from mimic.sim import Scene, fit_to_reach, load_clip, plan_from_events, scene_objects  # noqa: E402
 
-app = FastAPI(title="Mimic")
+app = FastAPI(title="Grasp")
 app.mount("/out", StaticFiles(directory=str(OUT)), name="out")
 app.mount("/clips", StaticFiles(directory=str(CLIPS)), name="clips")
 
