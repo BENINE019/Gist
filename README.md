@@ -10,8 +10,9 @@ on the table. Every successful run becomes a robot training episode.
 Built solo for the Meta Global AI Developer Hackathon (Oct 27 to Nov 4, 2026),
 indie developer track, problem statement *Push the Frontier*.
 
-- Demo video: *(https://youtu.be/A6R3YccEt0k)*
-- Live demo (upload your own clip, shuffle the scene): *(https://automatically-syntax-charges-constant.trycloudflare.com/)*
+- Demo video: *((https://youtu.be/A6R3YccEt0k))*
+- Live demo (upload your own clip, shuffle the scene): *(https://streams-symphony-justin-organizer.trycloudflare.com/)*
+Note: the live demo address changed on Nov 6. The demo runs on my PC through a Cloudflare quick tunnel, which issues a new address whenever it restarts, and a power cut forced a restart. No code changed after the Nov 4 deadline apart from this link and a page title fix on Nov 5 (commit history shows both).
 - Results: [eval/results.md](eval/results.md)
 
 ## The claim, in one picture
@@ -104,7 +105,7 @@ and a 640 x 480 video from a fixed camera.
 ## Quick start
 
 ```bash
-git clone https://github.com/BENINE019/Grasp.git && cd Grasp
+git clone https://github.com/BENINE019/Grasp.git && cd gist
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git ~/mujoco_menagerie
